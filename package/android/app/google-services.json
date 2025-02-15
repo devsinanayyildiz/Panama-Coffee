@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "409055452730",
+    "project_id": "panama-2d429",
+    "storage_bucket": "panama-2d429.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:409055452730:android:8fa9e4201bcd6b60489f03",
+        "android_client_info": {
+          "package_name": "com.panama"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAnU-4HsgUnz2CMbkF4MDxclArD2EgbHj8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
