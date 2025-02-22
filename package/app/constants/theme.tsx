@@ -32,7 +32,8 @@ export const COLORS = {
 	darkTitle : '#fff',
 	darkBorder : 'rgba(255,255,255,.2)',
 	darkInput : 'rgba(255,255,255,.05)',
-	darkinputborder:'#C1CDD9',
+	darkinputborder:'#C1CDD9', subtitle: undefined
+
 };
 
 export const SIZES = {

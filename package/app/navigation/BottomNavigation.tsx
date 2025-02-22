@@ -1,90 +1,83 @@
-import React, { useEffect } from 'react';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { BottomTabParamList } from './BottomTabParamList';
-import WishlistScreen from '../screens/Wishlist/Wishlist';
-import MyCartScreen from '../screens/MyCart/MyCart';
-import HomeScreen from '../screens/Home/Home';
-import ProfileScreen from '../screens/Profile/Profile';
-import BottomMenu from '../layout/BottomMenu';
-import { View } from 'react-native';
-import { SIZES } from '../constants/theme';
-import { useDrawerStatus } from '@react-navigation/drawer';
-import Animated, { useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated';
-import { useTheme } from '@react-navigation/native';
-// import { Animated } from 'react-native';
+import React from "react";
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import Icon from "react-native-vector-icons/Feather";
+import Home from "../screens/Home/Home";
+import Campaigns from "../screens/Campaigns/Campaigns.tsx";
+import Stores from "../screens/Stores/Stores";
+import Profile from "../screens/Profile/Profile";
+import { COLORS } from "../constants/theme";
 
-const Tab = createBottomTabNavigator<BottomTabParamList>();
+const Tab = createBottomTabNavigator();
 
+const CustomTabButton: React.FC<{ children: React.ReactNode; onPress: () => void }> = ({ children, onPress }) => (
+  <TouchableOpacity
+    style={styles.tabButton}
+    onPress={onPress}
+    activeOpacity={0.7}
+  >
+    {children}
+  </TouchableOpacity>
+);
 
 const BottomNavigation = () => {
-
-    const isDrawerOpen = useDrawerStatus();
-
-    console.log(isDrawerOpen);
-
-    const theme = useTheme();
-    const {colors}:{colors : any} = theme;
-
-    const drawerAnimation = useSharedValue(0);
-
-    useEffect(() => {
-        if (isDrawerOpen === 'open') {
-            drawerAnimation.value = withTiming(1, { duration: 100 });
-        } else {
-            drawerAnimation.value = withTiming(0, { duration: 100 });
-        }
-    }, [isDrawerOpen]);
-
-    const animatedStyle = useAnimatedStyle(() => {
-        return {
-            height: drawerAnimation.value === 1 ? withTiming(SIZES.height - 120) : undefined,
-            top: drawerAnimation.value === 1 ? withTiming(40) : 0,
-            flex : drawerAnimation.value === 1 ? undefined : 1,
-            borderRadius: drawerAnimation.value === 1 ? withTiming(30) : 0,
-            elevation: drawerAnimation.value === 1 ? withTiming(10) : 0,
-            transform: [
-                { rotate: drawerAnimation.value === 1 ? '-4deg' : '0deg' },
-                { translateX: drawerAnimation.value === 1 ? withTiming(40) : 0 },
-            ],
-        };
-    });
-
-    return (
-        <View style={{flex:1,backgroundColor:colors.card}}>
-            <Animated.View
-                style={[{
-                  height: SIZES.height,
-                  backgroundColor: colors.card,
-                  overflow: 'hidden',
-                }, animatedStyle]}
-            >
-                <Tab.Navigator
-                    initialRouteName="Home"
-                    screenOptions={{
-                        headerShown : false,
-                    }}
-                    tabBar={(props:any) => <BottomMenu {...props}/>}
-                >
-                    <Tab.Screen
-                        name="Home"
-                        component={HomeScreen}
-                    />
-                    <Tab.Screen
-                        name="Wishlist"
-                        component={WishlistScreen}
-                    />
-                    <Tab.Screen
-                        name="MyCart"
-                        component={MyCartScreen}
-                    />
-                    <Tab.Screen
-                        name="Profile"
-                        component={ProfileScreen}
-                    />
-                </Tab.Navigator>
-            </Animated.View>
-        </View>
-    );
+  return (
+    <Tab.Navigator
+      screenOptions={({ route }) => ({
+        tabBarShowLabel: false,
+        tabBarStyle: styles.tabBar,
+        tabBarIcon: ({ focused }) => {
+          let iconName;
+          if (route.name === "Home") {
+            iconName = "home";
+          } else if (route.name === "Kampanyalar") {
+            iconName = "gift";
+          } else if (route.name === "Magazalar") {
+            iconName = "map-pin";
+          } else if (route.name === "Profil") {
+            iconName = "user";
+          }
+          return (
+            <View style={styles.iconContainer}>
+              {iconName && (
+                <Icon
+                  name={iconName}
+                  size={25}
+                  color={focused ? COLORS.primary : "gray"}
+                />
+              )}
+              <Text style={{ color: focused ? COLORS.primary : "gray", fontSize: 7 }}>
+                {route.name}
+              </Text>
+            </View>
+          );
+        },
+      })}
+    >
+      <Tab.Screen name="Home" component={Home} options={{ headerShown: false }} />
+      <Tab.Screen name="Kampanyalar" component={Campaigns} options={{ headerShown: false }} />
+      <Tab.Screen name="Magazalar" component={Stores} options={{ headerShown: false }} />
+      <Tab.Screen name="Profil" component={Profile} options={{ headerShown: false }} />
+    </Tab.Navigator>
+  );
 };
+
+const styles = StyleSheet.create({
+  tabBar: {
+    backgroundColor: "white",
+    borderTopWidth: 0,
+    elevation: 10,
+    height: 45,
+  },
+  iconContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  tabButton: {
+    flex: 5,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+});
 
 export default BottomNavigation;

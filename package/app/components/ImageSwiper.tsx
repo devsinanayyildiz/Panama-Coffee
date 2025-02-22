@@ -1,102 +1,47 @@
-import React, { useState } from 'react';
-import { View, Image, useWindowDimensions,TouchableOpacity, Text } from 'react-native';
-import Animated, { interpolate, useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
-import { COLORS, FONTS } from '../constants/theme';
-import { useNavigation } from '@react-navigation/native';
+import React from 'react';
+import { View, Image, Dimensions, StyleSheet } from 'react-native';
+import Carousel from 'react-native-snap-carousel';
 
-const ImageSwiper = ({ data } : any) => {
-  const [newData] = useState([
-    //{ key: 'space-left' },
-    ...data,
-    //{ key: 'space-right' },
-  ]);
+const { width } = Dimensions.get("window");
 
-  const { width } = useWindowDimensions();
-  const SIZE = width * 0.50;
-  const SPACER = (width - SIZE) / 2;
-  const x = useSharedValue(0);
+interface ImageSwiperProps {
+    data: { id: string; image: any }[];
+}
 
-  const onScroll = (event: { nativeEvent: { contentOffset: { x: number; }; }; }) => {
-      x.value = event.nativeEvent.contentOffset.x;
-  };
+const ImageSwiper: React.FC<ImageSwiperProps> = ({ data }) => {
+    const renderItem = ({ item }: { item: { image: any } }) => (
+        <View style={styles.slide}>
+            <Image source={item.image} style={styles.image} />
+        </View>
+    );
 
-  const navigation = useNavigation<any>();
-
-  return (
-    <Animated.ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      bounces={false}
-      scrollEventThrottle={16}
-      snapToInterval={SIZE}
-      decelerationRate="fast"
-      onScroll={onScroll}
-      contentContainerStyle={{
-        paddingTop:80,
-        paddingBottom:50,
-      }}
-    >
-      {newData.map((item, index) => {
-
-        const style = useAnimatedStyle(() => {
-          const scale = interpolate(
-            x.value,
-            [(index - 1) * SIZE, (index - 2) * SIZE, index * SIZE],
-            [0.8, 0.7, 0.9]
-            );
-            return {
-              transform: [
-                { scale },
-              ],
-            };
-          });
-
-          if (!item.image) {
-            return <View style={{ width: SPACER}} key={index} />;
-          }
-
-        return (
-          <View key={index} style={{ width: SIZE}}>
-            <Animated.View style={[style]}>
-              <TouchableOpacity
-                activeOpacity={0.9}
-                onPress={() => navigation.navigate('ProductsDetails')}
-                style={{
-                  height: 222,
-                  width: 206,
-                  backgroundColor: COLORS.primary,
-                  borderRadius: 31,
-                  shadowColor: '#025135',
-                  shadowOffset: {
-                      width: 0,
-                      height: 15,
-                  },
-                  shadowOpacity: 0.34,
-                  shadowRadius: 31.27,
-                  elevation: 8,
-                }}
-              >
-                <View style={{alignItems:'center'}}>
-                  <Image
-                    style={{ height:210,width:210,resizeMode:'contain',marginTop:-80}}
-                    source={item.image}
-                  />
-                </View>
-                <View style={{paddingHorizontal:25}}>
-                  <Text style={{...FONTS.fontSemiBold,fontSize:16,color:COLORS.card}}>{item.title}</Text>
-                  <View style={{flexDirection:'row',alignItems:'flex-start',gap:5,marginTop:10}}>
-                      <Text style={{...FONTS.fontSemiBold,fontSize:14,color:COLORS.card}}>$</Text>
-                      <Text style={{...FONTS.fontSemiBold,fontSize:24,color:COLORS.card,lineHeight:32}}>{item.price}</Text>
-                      <Text style={{...FONTS.fontMedium,fontSize:16,color:'#6CAE97',textDecorationLine:'line-through'}}>{item.discount}</Text>
-                  </View>
-                </View>
-              </TouchableOpacity>
-            </Animated.View>
-          </View>
-        );
-      })}
-    </Animated.ScrollView>
-  );
+    return (
+        <Carousel
+            data={data}
+            renderItem={renderItem}
+            sliderWidth={width}
+            itemWidth={width * 0.9}
+            autoplay
+            loop
+            autoplayInterval={4000}
+            enableSnap={true}
+        />
+    );
 };
+
+const styles = StyleSheet.create({
+    slide: {
+        borderRadius: 10,
+        overflow: "hidden",
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    image: {
+        width: "100%",
+        height: 180,
+        resizeMode: "cover",
+        borderRadius: 10,
+    },
+});
 
 export default ImageSwiper;

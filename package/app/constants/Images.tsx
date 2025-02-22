@@ -1,9 +1,9 @@
 export const IMAGES = {
 
-    user : require('../assets/images/user.png'),
-    card : require('../assets/images/card.png'),
-    card1 : require('../assets/images/card1.png'),
-    Vector : require('../assets/images/Vector.png'),
+    
+
+
+    
     cardbackground1 : require('../assets/images/cardbackground1.png'),
     cardbackground2 : require('../assets/images/cardbackground2.png'),
     appname : require('../assets/images/appname.png'),
@@ -138,32 +138,11 @@ export const IMAGES = {
     item6: require('../assets/images/item2/pic3.png'),
 
 
-    brand1: require('../assets/images/brand/pic1.png'),
-    brand2: require('../assets/images/brand/pic2.png'),
-    brand3: require('../assets/images/brand/pic3.png'),
-    brand4: require('../assets/images/brand/pic4.png'),
-    brand5: require('../assets/images/brand/pic5.png'),
-    brand6: require('../assets/images/brand/pic6.png'),
-    brand7: require('../assets/images/brand/pic7.png'),
-    brand8: require('../assets/images/brand/pic8.png'),
-    brand9: require('../assets/images/brand/pic9.png'),
-    brand10: require('../assets/images/brand/pic10.png'),
-    brand11: require('../assets/images/brand/pic11.png'),
-    brand12: require('../assets/images/brand/pic12.png'),
-    brand13: require('../assets/images/brand/pic13.png'),
-    brand14: require('../assets/images/brand/pic14.png'),
-    brand15: require('../assets/images/brand/pic15.png'),
-    brand16: require('../assets/images/brand/pic16.png'),
-    brand17: require('../assets/images/brand/pic17.png'),
 
 
-    small1: require('../assets/images/small/pic5.png'),
-    small2: require('../assets/images/small/pic6.png'),
-    small3: require('../assets/images/small/pic7.png'),
-    small4: require('../assets/images/small/pic8.png'),
-    small5: require('../assets/images/small/pic9.png'),
-    small6: require('../assets/images/small/pic10.png'),
-    small7: require('../assets/images/small/pic11.png'),
+
+
+
 
     flags1: require('../assets/images/flags/pic1.png'),
     flags2: require('../assets/images/flags/pic2.png'),

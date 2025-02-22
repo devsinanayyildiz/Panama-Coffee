@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text,  ScrollView, Image, TouchableOpacity, StyleSheet, Platform } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, ScrollView, Image, TouchableOpacity, StyleSheet, Platform, Alert } from 'react-native';
 import { useNavigation, useTheme } from '@react-navigation/native';
 import Header from '../../layout/Header';
 import { GlobalStyleSheet } from '../../constants/StyleSheet';
@@ -8,59 +8,106 @@ import Input from '../../components/Input/Input';
 import ImagePicker from 'react-native-image-crop-picker';
 import Button from '../../components/Button/Button';
 import { COLORS, FONTS } from '../../constants/theme';
+import firestore from '@react-native-firebase/firestore';
+import auth from '@react-native-firebase/auth';
+import storage from '@react-native-firebase/storage';
 
 const EditProfile = () => {
-
     const theme = useTheme();
-    const { colors } : {colors : any} = theme;
-
+    const { colors }: { colors: any } = theme;
     const navigation = useNavigation<any>();
 
-    const [isFocused, setisFocused] = useState(false);
-    const [isFocused1, setisFocused1] = useState(false);
-    const [isFocused2, setisFocused2] = useState(false);
-    const [isFocused3, setisFocused3] = useState(false);
-
+    const [userId, setUserId] = useState('');
+    const [fullName, setFullName] = useState('');
+    const [phone, setPhone] = useState('');
+    const [email, setEmail] = useState('');
+    const [location, setLocation] = useState('');
     const [imageUrl, setImageUrl] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
 
-    const handleImageSelect = () => {
-        if(Platform.OS == 'android'){
-            try {
-                ImagePicker.openPicker({
-                    width: 200,
-                    height: 200,
-                    cropping: true,
-                }).then((image: { path: React.SetStateAction<string>; })  => {
-                    setImageUrl(image.path);
-                });
-            } catch (e) {
-                console.log(e);
+    useEffect(() => {
+        const fetchUserData = async () => {
+            const user = auth().currentUser;
+            if (user) {
+                setUserId(user.uid);
+                setEmail(user.email || '');
+
+                const userDoc = await firestore().collection('users').doc(user.uid).get();
+                if (userDoc.exists) {
+                    const userData = userDoc.data();
+                    setFullName(userData?.firstName + ' ' + userData?.lastName || '');
+                    setPhone(userData?.phone || '');
+                    setLocation(userData?.location || '');
+                    setImageUrl(userData?.profileImage || '');
+                }
             }
+        };
+        fetchUserData();
+    }, []);
 
+    const handleImageSelect = async () => {
+        try {
+            const image = await ImagePicker.openPicker({
+                width: 200,
+                height: 200,
+                cropping: true,
+            });
+
+            const reference = storage().ref(`profile_images/${userId}.jpg`);
+            await reference.putFile(image.path);
+            const url = await reference.getDownloadURL();
+
+            setImageUrl(url);
+            await firestore().collection('users').doc(userId).update({ profileImage: url });
+
+            Alert.alert('Başarılı', 'Profil fotoğrafı güncellendi!');
+        } catch (error) {
+            console.error('Fotoğraf yükleme hatası:', error);
         }
     };
 
+    const handleUpdateProfile = async () => {
+        if (!fullName || !phone || !location) {
+            Alert.alert('Hata', 'Lütfen tüm alanları doldurun.');
+            return;
+        }
+
+        setIsLoading(true);
+        try {
+            const nameParts = fullName.split(' ');
+            await firestore().collection('users').doc(userId).update({
+                firstName: nameParts[0] || '',
+                lastName: nameParts.slice(1).join(' ') || '',
+                phone,
+                location,
+            });
+
+            Alert.alert('Başarılı', 'Profiliniz güncellendi!');
+            navigation.navigate('Profile');
+        } catch (error) {
+            console.error('Profil güncelleme hatası:', error);
+            Alert.alert('Hata', 'Profil güncellenirken bir hata oluştu.');
+        }
+        setIsLoading(false);
+    };
+
     return (
-       <View style={{backgroundColor:colors.background,flex:1}}>
-           <Header
-                title="Edit Profile"
-                leftIcon="back"
-                titleRight
-           />
-            <ScrollView contentContainerStyle={{flexGrow:1,paddingHorizontal:15,marginBottom:50}}>
-                <View style={[GlobalStyleSheet.container, {backgroundColor:theme.dark ? 'rgba(255,255,255,.1)' : colors.card,marginTop:10,borderRadius:15}]}>
-                    <View style={{flexDirection:'row',alignItems:'center',gap:20}}>
-                        <View style={{}}>
+        <View style={{ backgroundColor: colors.background, flex: 1 }}>
+            <Header title="Profili Düzenle" leftIcon="back" titleRight />
+            <ScrollView contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 15, marginBottom: 50 }}>
+                <View style={[GlobalStyleSheet.container, { backgroundColor: theme.dark ? 'rgba(255,255,255,.1)' : colors.card, marginTop: 10, borderRadius: 15 }]}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 20 }}>
+                        <View>
                             <View style={styles.imageborder}>
                                 <Image
                                     style={{ height: 82, width: 82, borderRadius: 50 }}
-                                    source={imageUrl ? {uri : imageUrl}  : IMAGES.small6}
+                                    source={imageUrl ? { uri: imageUrl } : IMAGES.user2}
                                 />
                             </View>
                             <TouchableOpacity
                                 activeOpacity={0.8}
                                 onPress={handleImageSelect}
-                                style={[styles.WriteIconBackground,{ backgroundColor: colors.card }]}
+                                style={[styles.WriteIconBackground, { backgroundColor: colors.card }]}
                             >
                                 <View style={styles.WriteIcon}>
                                     <Image
@@ -71,147 +118,87 @@ const EditProfile = () => {
                             </TouchableOpacity>
                         </View>
                         <View>
-                            <Text style={[FONTS.fontMedium,{fontSize:19,color:colors.title}]}>James Smith</Text>
-                            <Text style={[FONTS.fontRegular,{fontSize:12,color:colors.text}]}>Last Visit : 17 Jan 2024</Text>
+                            <Text style={[FONTS.fontMedium, { fontSize: 19, color: colors.title }]}>{fullName || 'Kullanıcı Adı'}</Text>
+                            <Text style={[FONTS.fontRegular, { fontSize: 12, color: colors.text }]}>{email}</Text>
                         </View>
                     </View>
                 </View>
-                <View style={[GlobalStyleSheet.container,{backgroundColor:theme.dark ? 'rgba(255,255,255,.1)' : colors.card,marginTop:10,paddingVertical:10,borderRadius:15}]}>
-                    <View style={[styles.cardBackground,{ borderBottomColor:COLORS.inputborder,borderStyle:'dashed'}]}>
-                        <Text style={{ ...FONTS.fontRegular, fontSize: 14, color: colors.title }}>Overall Rating</Text>
-                    </View>
+                <View style={[GlobalStyleSheet.container, { backgroundColor: theme.dark ? 'rgba(255,255,255,.1)' : colors.card, marginTop: 10, paddingVertical: 10, borderRadius: 15 }]}>
                     <View style={{ marginBottom: 15, marginTop: 10 }}>
                         <Input
-                            onFocus={() => setisFocused(true)}
-                            onBlur={() => setisFocused(false)}
-                            isFocused={isFocused}
-                            onChangeText={(value) => console.log(value)}
-                            backround={colors.card}
-                            style={{borderRadius:48}}
+                            onChangeText={setFullName}
+                            value={fullName}
+                            placeholder="Ad Soyad"
                             inputicon
-                            placeholder="Full Name"
-                            icon={<Image source={IMAGES.user2} style={[styles.icon,{tintColor:colors.title}]}/>}
+                            icon={<Image source={IMAGES.user2} style={[styles.icon, { tintColor: colors.title }]} />}
                         />
                     </View>
                     <View style={{ marginBottom: 15 }}>
                         <Input
-                            onFocus={() => setisFocused1(true)}
-                            onBlur={() => setisFocused1(false)}
-                            isFocused={isFocused1}
-                            onChangeText={(value) => console.log(value)}
-                            backround={colors.card}
-                            style={{borderRadius:48}}
-                            keyboardType={'number-pad'}
+                            onChangeText={setPhone}
+                            value={phone}
+                            keyboardType="phone-pad"
+                            placeholder="Telefon Numarası"
                             inputicon
-                            placeholder="Mobile No."
-                            icon={<Image source={IMAGES.Phoneduotone} style={[styles.icon,{tintColor:colors.title}]}/>}
+                            icon={<Image source={IMAGES.Phoneduotone} style={[styles.icon, { tintColor: colors.title }]} />}
                         />
                     </View>
                     <View style={{ marginBottom: 15 }}>
                         <Input
-                            onFocus={() => setisFocused2(true)}
-                            onBlur={() => setisFocused2(false)}
-                            isFocused={isFocused2}
-                            onChangeText={(value) => console.log(value)}
-                            backround={colors.card}
-                            style={{borderRadius:48}}
+                            onChangeText={setLocation}
+                            value={location}
+                            placeholder="Konum"
                             inputicon
-                            placeholder="Email Address "
-                            icon={<Image source={IMAGES.email2} style={[styles.icon,{tintColor:colors.title}]}/>}
-                        />
-                    </View>
-                    <View style={{ marginBottom: 15 }}>
-                        <Input
-                            onFocus={() => setisFocused3(true)}
-                            onBlur={() => setisFocused3(false)}
-                            isFocused={isFocused3}
-                            onChangeText={(value) => console.log(value)}
-                            backround={colors.card}
-                            style={{borderRadius:48}}
-                            inputicon
-                            placeholder="Location"
-                            icon={<Image source={IMAGES.Pinduotone} style={[styles.icon,{tintColor:colors.title}]}/>}
+                            icon={<Image source={IMAGES.Pinduotone} style={[styles.icon, { tintColor: colors.title }]} />}
                         />
                     </View>
                 </View>
             </ScrollView>
             <View style={[GlobalStyleSheet.container]}>
                 <Button
-                    title="Update Profile"
+                    title="Profili Güncelle"
                     color={COLORS.primary}
-                    text={ COLORS.card}
-                    onPress={() => navigation.navigate('Profile')}
-                    style={{borderRadius:50}}
+                    text={COLORS.card}
+                    onPress={handleUpdateProfile}
+                    style={{ borderRadius: 50 }}
+                    loading={isLoading}
                 />
             </View>
-       </View>
+        </View>
     );
 };
 
 const styles = StyleSheet.create({
-    icon:{
-        height:28,
-        width:28,
-        resizeMode:'contain',
+    icon: {
+        height: 28,
+        width: 28,
+        resizeMode: 'contain',
     },
-    cardBackground:{
-        marginTop: 10,
-        borderBottomWidth:1,
-        borderBottomColor:COLORS.background,
-        marginHorizontal:-15,
-        paddingHorizontal:15,
-        paddingBottom:15,
-        marginBottom:10,
-    },
-    imageborder:{
+    imageborder: {
         borderWidth: 2,
-        borderColor:COLORS.primary,
+        borderColor: COLORS.primary,
         height: 90,
         width: 90,
         borderRadius: 50,
         alignItems: 'center',
         justifyContent: 'center',
     },
-    WriteIconBackground:{
+    WriteIconBackground: {
         height: 42,
         width: 42,
         borderRadius: 40,
-        backgroundColor: COLORS.card,
-        alignItems: 'center',
-        justifyContent: 'center',
         position: 'absolute',
         bottom: 0,
-        left:60,
+        left: 60,
     },
-    WriteIcon:{
+    WriteIcon: {
         height: 36,
         width: 36,
         borderRadius: 36,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor:COLORS.primary,
-    },
-    InputTitle:{
-        ...FONTS.fontMedium,
-        fontSize: 13,
-        color:COLORS.title,
-        marginBottom:5,
-    },
-    bottomBtn:{
-        height:75,
-        width:'100%',
-        backgroundColor:COLORS.card,
-        justifyContent:'center',
-        paddingHorizontal:15,
-        shadowColor: '#000',
-        shadowOffset: {
-            width: 2,
-            height: 2,
-        },
-        shadowOpacity: 0.1,
-        shadowRadius: 5,
+        backgroundColor: COLORS.primary,
     },
 });
-
 
 export default EditProfile;

@@ -1,10 +1,55 @@
+import firestore from '@react-native-firebase/firestore';
 import auth from '@react-native-firebase/auth';
 
-// 📌 Email ve Şifre ile Kayıt Olma + E-posta Doğrulama
-export const signUpWithEmail = async (email, password) => {
+
+export const updateLoyaltyPoints = async () => {
+  const user = auth().currentUser;
+
+  if (!user) {
+    console.warn("⚠️ Kullanıcı oturum açmamış!");
+    return { error: "Kullanıcı oturum açmamış." };
+  }
+
+  try {
+    const userRef = firestore().collection("users").doc(user.uid);
+    const userDoc = await userRef.get();
+
+    if (!userDoc.exists) {
+      return { error: "Kullanıcı Firestore'da bulunamadı!" };
+    }
+
+    let currentPoints = userDoc.data().loyaltyPoints || 0;
+
+    // Kullanıcı 15 puana ulaştıysa bedava kahve almalı
+    if (currentPoints >= 15) {
+      await userRef.update({ loyaltyPoints: 0 }); // Puan sıfırla (Bedava kahve verildi)
+      return { success: "Tebrikler! Ücretsiz kahvenizi aldınız. Puanlar sıfırlandı." };
+    } else {
+      await userRef.update({ loyaltyPoints: currentPoints + 1 });
+      return { success: "Sadakat puanı güncellendi. Yeni puan: " + (currentPoints + 1) };
+    }
+  } catch (error) {
+    console.error("🚨 Sadakat puanı güncellenirken hata oluştu:", error);
+    return { error: "Puan güncellenirken hata oluştu." };
+  }
+};
+
+// 📌 Email ve Şifre ile Kayıt Olma + Firestore'a Kullanıcı Ekleme
+export const signUpWithEmail = async (email, password, firstName, lastName) => {
   try {
     const userCredential = await auth().createUserWithEmailAndPassword(email, password);
     const user = userCredential.user;
+
+    // Kullanıcıyı Firestore'a ekleyelim
+    await firestore().collection("users").doc(user.uid).set({
+      id: user.uid, // Kullanıcının benzersiz Firebase ID'si
+      firstName: firstName,
+      lastName: lastName,
+      email: email,
+      loyaltyPoints: 0, // Sadakat puanı başlangıç değeri
+      freeCoffee: 0, // Ücretsiz kahve başlangıç değeri
+      createdAt: firestore.FieldValue.serverTimestamp() // Kayıt tarihi
+    });
 
     // Kullanıcıya e-posta doğrulama linki gönder
     await user.sendEmailVerification();

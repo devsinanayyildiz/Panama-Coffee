@@ -7,69 +7,39 @@ import { COLORS, FONTS } from '../../constants/theme';
 import { StackScreenProps } from '@react-navigation/stack';
 import { RootStackParamList } from '../../navigation/RootStackParamList';
 import Header from '../../layout/Header';
-import { getAuth, signOut, User } from 'firebase/auth';
+import auth from '@react-native-firebase/auth';
+import firestore from '@react-native-firebase/firestore';
 
-// Sayfa parametreleri
-type ProfileScreenProps = StackScreenProps<RootStackParamList, 'Profile'>;
-
-const Profile = ({ navigation }: ProfileScreenProps) => {
+const Profile = ({ navigation }: StackScreenProps<RootStackParamList, 'Profile'>) => {
     const theme = useTheme();
     const { colors }: { colors: any } = theme;
-    const auth = getAuth();
-    const [user, setUser] = useState<User | null>(null);
+    const [user, setUser] = useState<any>(null);
 
     useEffect(() => {
-        const currentUser = auth.currentUser;
-        setUser(currentUser);
+        const fetchUser = async () => {
+            const currentUser = auth().currentUser;
+            if (currentUser) {
+                const userDoc = await firestore().collection('users').doc(currentUser.uid).get();
+                setUser(userDoc.exists ? userDoc.data() : null);
+            }
+        };
+        fetchUser();
     }, []);
-
-    // Çıkış yapma fonksiyonu
-    const handleLogout = async () => {
-        try {
-            await signOut(auth);
-            navigation.replace('SingIn'); // Kullanıcıyı giriş ekranına yönlendir
-        } catch (error) {
-            console.error('Çıkış yaparken hata oluştu:', error);
-        }
-    };
 
     return (
         <View style={{ backgroundColor: colors.card, flex: 1 }}>
-            <Header
-                title="Profil"
-                leftIcon={'back'}
-                rightIcon2={'Edit'}
-            />
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ flexGrow: 1, paddingBottom: 50 }}>
+            <Header title='Profil' leftIcon={'back'} rightIcon2={'Edit'} />
+            <ScrollView showsHorizontalScrollIndicator={false} contentContainerStyle={{ flexGrow: 1, paddingBottom: 50 }}>
                 <View style={[GlobalStyleSheet.container, { alignItems: 'center', marginTop: 50, padding: 0 }]}>
-                    <View style={styles.sectionimg}>
-                        <Image style={{ height: 104, width: 104 }} source={IMAGES.small6} />
+                    <View style={styles.profileImageContainer}>
+                        <Image style={styles.profileImage} source={IMAGES.user2} />
                     </View>
-
-                    {user ? (
-                        <>
-                            <Text style={{ ...FONTS.fontSemiBold, fontSize: 24, color: colors.title }}>
-                                {user.displayName || 'Bilinmeyen Kullanıcı'}
-                            </Text>
-                            <Text style={{ ...FONTS.fontRegular, fontSize: 16, color: COLORS.primary }}>
-                                {user.email}
-                            </Text>
-                        </>
-                    ) : (
-                        <>
-                            <Text style={{ ...FONTS.fontSemiBold, fontSize: 24, color: colors.title }}>
-                                Giriş Yapılmadı
-                            </Text>
-                        </>
-                    )}
+                    <Text style={styles.userName}>{user?.firstName || 'Kullanıcı Adı'}</Text>
+                    <Text style={styles.userLocation}>{user?.email || 'example@gmail.com'}</Text>
                 </View>
-
                 <View style={[GlobalStyleSheet.container, { paddingHorizontal: 40, marginTop: 20 }]}>
-                    <TouchableOpacity
-                        style={[styles.logoutButton, { backgroundColor: COLORS.primary }]}
-                        onPress={handleLogout}
-                    >
-                        <Text style={{ color: COLORS.card, fontSize: 16, ...FONTS.fontMedium }}>Çıkış Yap</Text>
+                    <TouchableOpacity style={styles.logoutButton} onPress={() => auth().signOut().then(() => navigation.replace('SingIn'))}>
+                        <Text style={styles.logoutText}>Çıkış Yap</Text>
                     </TouchableOpacity>
                 </View>
             </ScrollView>
@@ -78,19 +48,40 @@ const Profile = ({ navigation }: ProfileScreenProps) => {
 };
 
 const styles = StyleSheet.create({
-    sectionimg: {
+    profileImageContainer: {
         height: 104,
         width: 104,
         borderRadius: 150,
         backgroundColor: COLORS.primary,
         overflow: 'hidden',
         marginBottom: 25,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    profileImage: {
+        height: 104,
+        width: 104,
+    },
+    userName: {
+        ...FONTS.fontSemiBold,
+        fontSize: 24,
+        color: COLORS.title,
+    },
+    userLocation: {
+        ...FONTS.fontRegular,
+        fontSize: 16,
+        color: COLORS.primary,
     },
     logoutButton: {
-        marginTop: 20,
+        backgroundColor: COLORS.primary,
         paddingVertical: 12,
         borderRadius: 8,
         alignItems: 'center',
+    },
+    logoutText: {
+        color: COLORS.card,
+        fontSize: 16,
+        ...FONTS.fontMedium,
     },
 });
 

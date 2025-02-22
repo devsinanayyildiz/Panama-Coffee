@@ -1,347 +1,193 @@
-import React, { useRef, useState } from 'react';
-import { View, Text, ScrollView, Image, TouchableOpacity, TextInput, StyleSheet } from 'react-native';
-import { useTheme } from '@react-navigation/native';
-import { GlobalStyleSheet } from '../../constants/StyleSheet';
-import { IMAGES } from '../../constants/Images';
-import { COLORS, FONTS } from '../../constants/theme';
+import React, { useEffect, useState } from "react";
+import { View, Text, ScrollView, ActivityIndicator, StyleSheet, TouchableOpacity, Image } from "react-native";
+import firestore from "@react-native-firebase/firestore";
+import auth from "@react-native-firebase/auth";
+import QRCode from 'react-native-qrcode-svg';
+import { ProgressBar } from 'react-native-paper';
+import { COLORS, FONTS } from "../../constants/theme";
 import FeatherIcon from 'react-native-vector-icons/Feather';
-import { useDispatch, useSelector } from 'react-redux';
-import { StackScreenProps } from '@react-navigation/stack';
-import { RootStackParamList } from '../../navigation/RootStackParamList';
-import { addTowishList } from '../../redux/reducer/wishListReducer';
-import ImageSwiper from '../../components/ImageSwiper';
-import Cardstyle4 from '../../components/Card/Cardstyle4';
 
+const MAX_POINTS = 15; // 15 Panama Point'te ücretsiz kahve
 
+const Home = ({ navigation }: { navigation: any }) => {
+    const [currentUser, setCurrentUser] = useState<any>(null);
+    const [loyaltyPoints, setLoyaltyPoints] = useState<number>(0);
+    const [loading, setLoading] = useState<boolean>(true);
 
-const ArrivalData = [
-    {
-        id:'1',
-        title: 'Sıcak İçecekler',
-        image:IMAGES.cup,
-    },
-    {
-        id:'2',
-        title: 'Soğuk İçecekler',
-        image:IMAGES.hamburger,
-    },
-    {
-        id:'3',
-        title: 'Tatlılarımız',
-        image:IMAGES.cup,
-    },
-    {
-        id:'4',
-        title: 'Ekstralar',
-        image:IMAGES.hamburger,
-    },
+    useEffect(() => {
+        const fetchUserData = async () => {
+            try {
+                const user = auth().currentUser;
+                if (!user) {
+                    console.warn("⚠️ Kullanıcı oturum açmamış.");
+                    setLoading(false);
+                    return;
+                }
 
-];
+                console.log("🔍 Kullanıcı ID:", user.uid);
+                const userRef = firestore().collection("users").doc(user.uid);
+                const docSnapshot = await userRef.get();
 
-const CardStyleData = [
-    {
-        id:'0',
-        image:IMAGES.item1,
-        title:'Hot Creamy Cappuccino Latte panama',
-        price:'$12.6',
-        countnumber:'50 Pts',
-    },
-    {
-        id:'1',
-        image:IMAGES.item2,
-        title:'Creamy Mocha Ome Coffee',
-        price:'$13.6',
-        countnumber:'50 Pts',
-    },
-    {
-        id:'2',
-        image:IMAGES.item3,
-        title:'Original Latte panama Hot Coffee',
-        price:'$12.6',
-        countnumber:'50 Pts',
-    },
-];
+                if (docSnapshot.exists) {
+                    console.log("✅ Kullanıcı verisi bulundu!");
+                    const userData = docSnapshot.data();
+                    setCurrentUser(userData);
+                    setLoyaltyPoints(userData?.loyaltyPoints || 0);
+                } else {
+                    console.warn("⚠️ Kullanıcı Firestore'da bulunamadı!");
+                }
+            } catch (error) {
+                console.error("🚨 Kullanıcı verisi çekme hatası:", error);
+            }
+            setLoading(false);
+        };
 
-const SwiperData = [
-    {
-        id:'1',
-        image:IMAGES.item11,
-        title:'Creamy Ice Coffe',
-        price:'5.8',
-        discount:'$8.0',
-    },
-    {
-        id:'2',
-        image:IMAGES.item12,
-        title:'Creamy Ice Coffe',
-        price:'5.8',
-        discount:'$8.0',
-    },
-    {
-        id:'3',
-        image:IMAGES.item11,
-        title:'Creamy Ice Coffe',
-        price:'5.8',
-        discount:'$8.0',
-    },
-    {
-        id:'4',
-        image:IMAGES.item12,
-        title:'Creamy Ice Coffe',
-        price:'5.8',
-        discount:'$8.0',
-    },
-    {
-        id:'5',
-        image:IMAGES.item11,
-        title:'Creamy Ice Coffe',
-        price:'5.8',
-        discount:'$8.0',
-    },
-    {
-        id:'6',
-        image:IMAGES.item12,
-        title:'Creamy Ice Coffe',
-        price:'5.8',
-        discount:'$8.0',
-    },
-];
+        fetchUserData();
+    }, []);
 
-type HomeScreenProps = StackScreenProps<RootStackParamList, 'Home'>
-
-export const Home = ({ navigation }: HomeScreenProps) => {
-
-    // const wishList = useSelector((state:any) => state.wishList.wishList);
-    // console.log(wishList);
-
-    const dispatch = useDispatch();
-
-    const theme = useTheme();
-    const { colors }: { colors: any; } = theme;
-
-    const addItemToWishList = (data: any) => {
-        dispatch(addTowishList(data));
-    };
+    if (loading) {
+        return (
+            <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color={COLORS.primary} />
+                <Text>Veriler yükleniyor...</Text>
+            </View>
+        );
+    }
 
     return (
-        <View style={{ backgroundColor: colors.card, flex: 1 }}>
-            <View style={{}}>
-                <View style={[GlobalStyleSheet.container, { paddingHorizontal: 30,padding:0,paddingTop:30 }]}>
-                    <View style={[GlobalStyleSheet.flex]}>
-                        <View>
-                            <Text style={{ ...FONTS.fontRegular, fontSize: 14, color: colors.title }}>İyi Günler</Text>
-                            <Text style={{ ...FONTS.fontSemiBold, fontSize: 24, color: colors.title }}>Okan</Text>
-                        </View>
-                        <View style={{flexDirection:'row',alignItems:'center'}}>
-                            <TouchableOpacity
-                                onPress={() => navigation.navigate('Notification')}
-                                activeOpacity={0.5}
-                                style={[GlobalStyleSheet.background3, {}]}
-                            >
-                                <Image
-                                   style={[GlobalStyleSheet.image3,{tintColor:theme.dark ? COLORS.card : '#5F5F5F'}]}
-                                    source={IMAGES.Notification}
-                                />
-                                <View
-                                    style={[styles.notifactioncricle,{
-                                        backgroundColor:colors.card,
-                                    }]}
-                                >
-                                    <View
-                                        style={{
-                                            height:13,
-                                            width:13,
-                                            borderRadius:13,
-                                            backgroundColor:COLORS.primary,
-                                        }}
-                                    />
-                                </View>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                activeOpacity={0.5}
-                                onPress={() => navigation.openDrawer()}
-                                style={[GlobalStyleSheet.background3, {}]}
-                            >
-                                <Image
-                                    style={[GlobalStyleSheet.image3,{tintColor:theme.dark ? COLORS.card : '#5F5F5F'}]}
-                                    source={IMAGES.grid6}
-                                />
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-                </View>
+        <ScrollView style={styles.container}>
+
+            {/* 🔥 Üst Bar */}
+            <View style={styles.header}>
+                <TouchableOpacity
+                    style={styles.menuButton}
+                    onPress={() => navigation.openDrawer()} // 🔥 Menüyü aç
+                >
+                    <FeatherIcon name="menu" size={28} color={COLORS.title} />
+                </TouchableOpacity>
+                <Text style={styles.headerTitle}>Ana Sayfa</Text>
+                <Image source={{ uri: currentUser?.profilePicture || "https://via.placeholder.com/50" }} style={styles.profileImage} />
             </View>
-            <ScrollView showsVerticalScrollIndicator={false}>
-                <View style={[GlobalStyleSheet.container,{padding:0,paddingHorizontal:30,paddingTop:15}]}>
-                    <View>
-                        <TextInput
-                            placeholder="Ürün Arayın!"
-                            style={[styles.TextInput, { color: COLORS.title,backgroundColor:'#FAFAFA' }]}
-                            placeholderTextColor={'#929292'} />
-                        <View style={{ position: 'absolute', top: 15, right: 20 }}>
-                            <FeatherIcon name="search" size={24} color={'#C9C9C9'} />
-                        </View>
-                    </View>
-                </View>
-                <View style={{alignItems:'center'}}>
-                    <View style={[GlobalStyleSheet.container,{padding:0}]}>
-                        <ImageSwiper
-                            data={SwiperData}
-                        />
-                    </View>
-                </View>
-                <View style={[GlobalStyleSheet.container,{paddingHorizontal:0,paddingTop:0}]}>
-                    <View style={[GlobalStyleSheet.flex,{paddingHorizontal:30}]}>
-                        <Text style={[styles.brandsubtitle3,{fontSize: 18,color:colors.title}]}>Kategoriler</Text>
-                    </View>
-                    <View style={{ marginHorizontal: -15, paddingHorizontal: 15, paddingTop: 25 }}>
-                        <ScrollView
-                            horizontal
-                            showsHorizontalScrollIndicator={false}
-                            contentContainerStyle={{ paddingHorizontal: 30 }}
-                        >
-                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 15, marginRight: 10,marginBottom:20 }}>
-                                {ArrivalData.map((data: any, index) => {
-                                    return (
-                                        <TouchableOpacity
-                                            activeOpacity={0.8}
-                                            onPress={() => {navigation.navigate('Products'); }}
-                                            key={index}
-                                            style={[styles.arrivaldata,{
-                                                backgroundColor:theme.dark ? colors.background : colors.card,
-                                                borderColor:'#EFEFEF',
-                                                shadowColor: 'rgba(4,118,78,.6)',
-                                            }]}>
-                                            <View style={[GlobalStyleSheet.flexcenter,{gap:20,justifyContent:'flex-start'}]}>
-                                                <Image
-                                                    style={[GlobalStyleSheet.image3]}
-                                                    source={data.image}
-                                                />
-                                                <View>
-                                                    <Text style={{ ...FONTS.fontMedium, fontSize: 16, color:  colors.title }}>{data.title}</Text>
-                                                    <Text style={{ ...FONTS.fontRegular, fontSize: 14, color:COLORS.primary }}>{data.subtitle}</Text>
-                                                </View>
-                                            </View>
-                                        </TouchableOpacity>
-                                    );
-                                })}
-                            </View>
-                        </ScrollView>
-                    </View>
-                </View>
-                <View style={[GlobalStyleSheet.container, { paddingHorizontal: 0, paddingTop: 0, paddingBottom: 10 }]}>
-                    <View style={[GlobalStyleSheet.flex, { paddingHorizontal: 30 }]}>
-                        <Text style={[styles.brandsubtitle3, { fontSize: 18, color: colors.title }]}>Featured Beverages</Text>
-                        <TouchableOpacity>
-                            <Text style={[styles.brandsubtitle3, { fontSize: 16, color:COLORS.primary }]}>More</Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-                <View style={[GlobalStyleSheet.container,{paddingHorizontal:30}]}>
-                    {CardStyleData.map((data:any, index:any) => {
-                        return (
-                            <View key={index} style={{marginBottom:40}}>
-                                <Cardstyle4
-                                    id={data.id}
-                                    image={data.image}
-                                    price={data.price}
-                                    countnumber={data.countnumber}
-                                    title={data.title}
-                                    onPress={() => navigation.navigate('ProductsDetails')}
-                                    onPress5={() => addItemToWishList(data)}
-                                />
-                            </View>
-                        );
-                    })}
-                </View>
-            </ScrollView>
-        </View>
+
+            {/* 🔥 Hoş Geldin Mesajı */}
+            <View style={styles.welcomeContainer}>
+                <Text style={styles.welcomeText}>Merhaba, {currentUser?.firstName || "Kullanıcı"}! ☕</Text>
+                <Text style={styles.subText}>QR kodunuzu kasada okutarak puan kazanın.</Text>
+            </View>
+
+            {/* 🔥 QR Kod */}
+            <View style={styles.qrContainer}>
+                <QRCode value={currentUser?.id || "Kullanıcı"} size={150} />
+                <Text style={styles.qrText}>QR Kodunuzu Kasada Okutun</Text>
+            </View>
+
+            {/* 🔥 Panama Point (Sadakat Programı) */}
+            <View style={styles.loyaltyContainer}>
+                <Text style={styles.pointsText}>Panama Point: {loyaltyPoints} / {MAX_POINTS}</Text>
+                <ProgressBar
+                    progress={loyaltyPoints / MAX_POINTS}
+                    color={COLORS.primary}
+                    style={styles.progressBar}
+                />
+                {loyaltyPoints >= MAX_POINTS && (
+                    <Text style={styles.rewardText}>Tebrikler! Ücretsiz kahvenizi almak için kasaya QR kodunuzu okutun.</Text>
+                )}
+            </View>
+
+        </ScrollView>
     );
 };
 
 const styles = StyleSheet.create({
-    notifactioncricle:{
-        height:16,
-        width:16,
-        borderRadius:16,
-        backgroundColor:COLORS.card,
-        alignItems:'center',
-        justifyContent:'center',
-        position:'absolute',
-        top:2,
-        right:2,
-    },
-    flex:{
-        flexDirection:'row',
-        alignItems:'flex-start',
-        justifyContent:'center',
-    },
-    TextInput:{
-        ...FONTS.fontRegular,
-        fontSize:16,
-        color:COLORS.title,
-        height:60,
-        borderRadius:61,
-        paddingHorizontal:40,
-        paddingLeft:30,
-        borderWidth:1,
-        borderColor:'#EBEBEB',
-        backgroundColor:'#FAFAFA',
-    },
-    brandsubtitle2:{
-        ...FONTS.fontSemiBold,
-        fontSize:12,
-        color:COLORS.card,
-    },
-    brandsubtitle3:{
-        ...FONTS.fontMedium,
-        fontSize:12,
-        color:COLORS.title,
-    },
-    title1:{
-        ...FONTS.fontBold,
-        fontSize:28,
-        color:COLORS.title,
-    },
-    title2:{
-        ...FONTS.fontRegular,
-        fontSize:12,
-        color:COLORS.title,
-    },
-    title3:{
-        ...FONTS.fontSemiBold,
-        fontSize:24,
-        color:'#8ABE12',
-        //textAlign:'right'
-    },
-    colorCard:{
+    container: { flex: 1, backgroundColor: COLORS.background, padding: 15 },
 
+    /* 🔥 Üst Bar */
+    header: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        paddingHorizontal: 15,
+        paddingVertical: 20
     },
-    colorCardTitle:{
-        ...FONTS.fontMedium,
-        fontSize:12,
-        color:COLORS.title,
-        lineHeight:20,
-        textAlign:'center',
+    menuButton: {
+        padding: 10,
+        borderRadius: 10,
+        backgroundColor: COLORS.card, // 🔥 Uygulama temasına uygun renk
+        justifyContent: "center",
+        alignItems: "center"
     },
-    arrivaldata:{
-        backgroundColor:COLORS.card,
-        borderRadius: 18,
-        width:199,
-        paddingHorizontal: 10,
-        paddingLeft:25,
-        paddingVertical: 15,
-        borderWidth:1,
-        borderColor:'#EFEFEF',
-        shadowColor: 'rgba(4,118,78,.6)',
-        shadowOffset: {
-            width: 0,
-            height: 4,
-        },
-        shadowOpacity: 0.34,
-        shadowRadius: 18.27,
-        elevation: 4,
+    headerTitle: {
+        fontSize: 22,
+        fontWeight: "bold",
+        color: COLORS.title
     },
+    profileImage: {
+        width: 40,
+        height: 40,
+        borderRadius: 50
+    },
+
+    /* 🔥 Hoş Geldin */
+    welcomeContainer: {
+        alignItems: "center",
+        marginVertical: 10
+    },
+    welcomeText: {
+        fontSize: 24,
+        fontWeight: "bold",
+        color: COLORS.title
+    },
+    subText: {
+        fontSize: 16,
+        color: COLORS.subtitle
+    },
+
+    /* 🔥 QR Kodu */
+    qrContainer: {
+        alignItems: "center",
+        padding: 20,
+        backgroundColor: COLORS.card,
+        borderRadius: 10,
+        marginVertical: 20
+    },
+    qrText: {
+        fontSize: 18,
+        fontWeight: "bold",
+        marginTop: 10,
+        color: COLORS.primary
+    },
+
+    /* 🔥 Sadakat Puanı */
+    loyaltyContainer: {
+        padding: 20,
+        backgroundColor: COLORS.card,
+        borderRadius: 10,
+        alignItems: "center"
+    },
+    pointsText: {
+        fontSize: 16,
+        marginBottom: 10,
+        fontWeight: "bold",
+        color: COLORS.title
+    },
+    progressBar: {
+        height: 12,
+        width: "90%",
+        borderRadius: 10,
+        backgroundColor: "#ddd"
+    },
+    rewardText: {
+        fontSize: 14,
+        fontWeight: "bold",
+        color: COLORS.primary,
+        marginTop: 10
+    },
+
+    loadingContainer: {
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center"
+    }
 });
 
 export default Home;

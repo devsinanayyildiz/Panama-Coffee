@@ -1,14 +1,14 @@
 import React, { Component } from 'react';
 import SplashScreen from 'react-native-splash-screen';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
-import { StatusBar } from 'react-native';  // StatusBar'ı doğru import ettik
+import { StatusBar } from 'react-native';
 import { Provider } from 'react-redux';
-import Route from './app/navigation/Route';  // Route.tsx'i import ediyoruz
-import store from './app/redux/store';  // Redux store'u import ediyoruz
+import Route from './app/navigation/Route';  // Route içinde NavigationContainer varsa eklemene gerek yok
+import store from './app/redux/store';
 
 export default class App extends Component {
     componentDidMount() {
-        SplashScreen.hide();  // Splash ekranını gizle
+        SplashScreen.hide();
     }
 
     render() {

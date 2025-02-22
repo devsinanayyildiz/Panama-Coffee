@@ -1,4 +1,5 @@
 import React from 'react';
+import { createDrawerNavigator } from '@react-navigation/drawer';
 import { createStackNavigator, CardStyleInterpolators } from '@react-navigation/stack';
 import { RootStackParamList } from './RootStackParamList';
 import { StatusBar, View, Text } from 'react-native';
@@ -16,21 +17,13 @@ import BottomNavigation from './BottomNavigation';
 import DrawerNavigation from './DrawerNavigation';
 import Notification from '../screens/Notification/Notification';
 import Search from '../screens/Search/Search';
-import Products from '../screens/Category/Products';
-import ProductsDetails from '../screens/Category/ProductsDetails';
 import DeliveryAddress from '../screens/Payment/DeliveryAddress';
 import AddDeliveryAddress from '../screens/Payment/AddDeliveryAddress';
 import Payment from '../screens/Payment/Payment';
 import Addcard from '../screens/Payment/Addcard';
 import Checkout from '../screens/Payment/Checkout';
-import Myorder from '../screens/Myorder/Myorder';
-import Trackorder from '../screens/Myorder/Trackorder';
-import Writereview from '../screens/Myorder/Writereview';
-import Chat from '../screens/Chat/Chat';
-import Singlechat from '../screens/Chat/Singlechat';
-import Call from '../screens/Chat/Call';
+
 import EditProfile from '../screens/Profile/EditProfile';
-import Rewards from '../screens/Myorder/Rewards';
 import Components from '../screens/Components/Components';
 import AccordionScreen from '../screens/Components/Accordion';
 import BottomSheet from '../screens/Components/BottomSheet';
@@ -55,6 +48,11 @@ import Tabs from '../screens/Components/Tabs';
 import Tables from '../screens/Components/Tables';
 import Toggles from '../screens/Components/Toggles';
 import Home from "../screens/Home/Home.tsx";
+import Profile from "../screens/Profile/Profile.tsx";
+import Campaigns from '../screens/Campaigns/Campaigns.tsx';
+import CampaignDetails from '../screens/Campaigns/CampaignDetails.tsx';
+
+
 
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -73,6 +71,7 @@ const StackNavigator = () => {
 					cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
 				}}
 			>
+
 				<Stack.Screen name="Onboarding" component={Onboarding} />
 				<Stack.Screen name="WelCome" component={WelCome} />
 				<Stack.Screen name="SignUp" component={SignUp} />
@@ -84,23 +83,13 @@ const StackNavigator = () => {
 				<Stack.Screen name="DrawerNavigation" component={DrawerNavigation} />
 				<Stack.Screen name="Notification" component={Notification} />
 				<Stack.Screen name="Search" component={Search} />
-				<Stack.Screen name="Products" component={Products} />
-				<Stack.Screen name="ProductsDetails" component={ProductsDetails} />
 				<Stack.Screen name="DeliveryAddress" component={DeliveryAddress} />
 				<Stack.Screen name="AddDeliveryAddress" component={AddDeliveryAddress} />
 				<Stack.Screen name="Payment" component={Payment} />
 				<Stack.Screen name="Addcard" component={Addcard} />
 				<Stack.Screen name="Checkout" component={Checkout} />
-				<Stack.Screen name="Myorder" component={Myorder} />
-				<Stack.Screen name="Trackorder" component={Trackorder} />
-				<Stack.Screen name="Writereview" component={Writereview} />
-				<Stack.Screen name="Rewards" component={Rewards} />
-				<Stack.Screen name="Chat" component={Chat} />
-				 <Stack.Screen name="Singlechat" component={Singlechat} />
-				 <Stack.Screen name="Call" component={Call} />
-				 <Stack.Screen name="EditProfile" component={EditProfile} />
-
-
+				<Stack.Screen name="EditProfile" component={EditProfile} />
+				<Stack.Screen name="Profile" component={Profile} />
 				<Stack.Screen name="Components" component={Components} />
 				<Stack.Screen name="Accordion" component={AccordionScreen} />
 				<Stack.Screen name="BottomSheet" component={BottomSheet} />
@@ -116,6 +105,8 @@ const StackNavigator = () => {
                 <Stack.Screen name="TabStyle4" component={TabStyle4} />
                 <Stack.Screen name="Inputs" component={Inputs} />
 				<Stack.Screen name="lists" component={ListScreen} />
+				<Stack.Screen name="Campaigns" component={Campaigns} />
+				<Stack.Screen name="CampaignDetails" component={CampaignDetails} />
 				<Stack.Screen name="Pricings" component={Pricings} />
 				<Stack.Screen name="DividerElements" component={DividerElements} />
 				<Stack.Screen name="Snackbars" component={Snackbars} />

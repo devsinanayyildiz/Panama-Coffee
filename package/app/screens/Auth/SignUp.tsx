@@ -1,93 +1,155 @@
-import React, { useState } from 'react';
-import { View, Text, SafeAreaView, Alert, ScrollView, StyleSheet } from 'react-native';
-import { useTheme } from '@react-navigation/native';
-import { StackScreenProps } from '@react-navigation/stack';
-import { RootStackParamList } from '../../navigation/RootStackParamList';
-import Input from '../../components/Input/Input';
-import Button from '../../components/Button/Button';
-import { signUpWithEmail } from '../../firebase/auth'; // Firebase auth fonksiyonlarını import edin
+import React, { useState } from "react";
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Image } from "react-native";
+import auth from "@react-native-firebase/auth";
+import firestore from "@react-native-firebase/firestore";
+import { StackScreenProps } from "@react-navigation/stack";
+import { RootStackParamList } from "../../navigation/RootStackParamList";
+import { COLORS, FONTS } from "../../constants/theme";
+import { IMAGES } from "../../constants/Images";
 
 type SignUpScreenProps = StackScreenProps<RootStackParamList, 'SignUp'>;
 
-const SignUp = ({ navigation }: SignUpScreenProps) => {
-    const theme = useTheme();
-    const { colors } = theme;
-
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
+const SignUpScreen: React.FC<SignUpScreenProps> = ({ navigation }) => {
+    const [firstName, setFirstName] = useState("");
+    const [lastName, setLastName] = useState("");
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(false);
 
-    // 📌 Kayıt Ol Fonksiyonu
     const handleSignUp = async () => {
-        if (!email || !password) {
-            Alert.alert('Hata', 'Lütfen e-posta ve şifrenizi girin!');
+        if (!firstName || !lastName || !email || !password) {
+            Alert.alert("Hata", "Lütfen tüm alanları doldurun.");
             return;
         }
 
         setLoading(true);
         try {
-            await signUpWithEmail(email, password);
-            Alert.alert('Başarılı', 'Hesap oluşturuldu! Lütfen e-postanızı doğrulayın.');
-            navigation.navigate('SingIn');  // Kullanıcı başarılı bir şekilde kayıt olduktan sonra SignIn ekranına yönlendirme
+            const userCredential = await auth().createUserWithEmailAndPassword(email, password);
+            const userId = userCredential.user.uid;
+
+            await firestore().collection("users").doc(userId).set({
+                id: userId,
+                firstName: firstName,
+                lastName: lastName,
+                email: email,
+                loyaltyPoints: 0,
+                freeCoffee: 0,
+                createdAt: firestore.FieldValue.serverTimestamp()
+            });
+
+            Alert.alert("Başarılı", "Kayıt tamamlandı! Şimdi giriş yapabilirsiniz.");
+            navigation.replace("SingIn"); // Kullanıcıyı giriş ekranına yönlendir
         } catch (error: any) {
-            Alert.alert('Kayıt Başarısız', error.message);
-        } finally {
-            setLoading(false);
+            Alert.alert("Kayıt Hatası", error.message);
         }
+        setLoading(false);
     };
 
     return (
-        <SafeAreaView style={{ flex: 1, backgroundColor: colors.card }}>
-            <ScrollView contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 30 }}>
-                <View style={{ marginTop: 50, alignItems: 'center' }}>
-                    <Text style={{ color: colors.text }}>Hesap Oluştur</Text>
-                    <Text style={[styles.subtitle, { color: colors.text }]}>Lütfen bilgilerinizi girin</Text>
-                </View>
+        <View style={styles.container}>
+            {/* 📌 Üst Logo */}
+            <Image source={IMAGES.logo} style={styles.logo} />
 
-                {/* 📌 E-posta Girişi */}
-                <View style={{ marginBottom: 20, marginTop: 10 }}>
-                    <Input
-                        placeholder="E-posta adresiniz"
-                        keyboardType="email-address"
-                        value={email}
-                        onChangeText={setEmail}
-                        inputBorder
-                    />
-                </View>
+            <Text style={styles.title}>Hesap Oluştur</Text>
 
-                {/* 📌 Şifre Girişi */}
-                <View style={{ marginBottom: 20, marginTop: 10 }}>
-                    <Input
-                        placeholder="Şifreniz"
-                        secureTextEntry
-                        value={password}
-                        onChangeText={setPassword}
-                        inputBorder
-                    />
-                </View>
+            {/* 📌 Kullanıcı Bilgileri */}
+            <TextInput
+                style={styles.input}
+                placeholder="Adınız"
+                value={firstName}
+                onChangeText={setFirstName}
+                placeholderTextColor={"gray"}
+            />
+            <TextInput
+                style={styles.input}
+                placeholder="Soyadınız"
+                value={lastName}
+                onChangeText={setLastName}
+                placeholderTextColor={"gray"}
+            />
+            <TextInput
+                style={styles.input}
+                placeholder="E-posta"
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                placeholderTextColor={"gray"}
+            />
+            <TextInput
+                style={styles.input}
+                placeholder="Şifre"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry
+                placeholderTextColor={"gray"}
+            />
 
-                {/* 📌 Kayıt Ol Butonu */}
-                <Button
-                    title={loading ? 'Kayıt yapılıyor...' : 'KAYIT OL'}
-                    onPress={handleSignUp}
-                    style={{ borderRadius: 52, marginTop: 20 }}
-                    disabled={loading}
-                />
-            </ScrollView>
-        </SafeAreaView>
+            {/* 📌 Kayıt Ol Butonu */}
+            <TouchableOpacity style={styles.button} onPress={handleSignUp} disabled={loading}>
+                <Text style={styles.buttonText}>{loading ? "Kaydediliyor..." : "Kayıt Ol"}</Text>
+            </TouchableOpacity>
+
+            {/* 📌 Zaten hesabın var mı? */}
+            <TouchableOpacity onPress={() => navigation.navigate("SingIn")}>
+                <Text style={styles.signInText}>Zaten bir hesabın var mı? <Text style={styles.signInLink}>Giriş Yap</Text></Text>
+            </TouchableOpacity>
+        </View>
     );
 };
 
 const styles = StyleSheet.create({
-    title: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        marginBottom: 5,
+    container: {
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+        backgroundColor: COLORS.card,
+        padding: 20
     },
-    subtitle: {
+    logo: {
+        width: 120,
+        height: 120,
+        marginBottom: 20,
+        resizeMode: "contain"
+    },
+    title: {
+        ...FONTS.fontSemiBold,
+        fontSize: 24,
+        marginBottom: 20,
+        color: COLORS.title
+    },
+    input: {
+        width: "100%",
+        padding: 15,
+        borderWidth: 1,
+        borderRadius: 8,
+        marginBottom: 10,
+        backgroundColor: "#FFF",
+        borderColor: "#ddd",
+        color: COLORS.title
+    },
+    button: {
+        backgroundColor: COLORS.primary,
+        padding: 15,
+        borderRadius: 8,
+        width: "100%",
+        alignItems: "center",
+        marginVertical: 10
+    },
+    buttonText: {
+        color: "#fff",
+        fontSize: 16,
+        fontWeight: "bold"
+    },
+    signInText: {
         fontSize: 14,
-        opacity: 0.7,
+        color: COLORS.title
+    },
+    signInLink: {
+        fontSize: 14,
+        fontWeight: "bold",
+        color: COLORS.primary
     },
 });
 
-export default SignUp;
+export default SignUpScreen;

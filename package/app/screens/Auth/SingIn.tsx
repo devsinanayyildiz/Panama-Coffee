@@ -8,30 +8,36 @@ import { RootStackParamList } from '../../navigation/RootStackParamList';
 import Input from '../../components/Input/Input';
 import { IMAGES } from '../../constants/Images';
 import Button from '../../components/Button/Button';
-import { signInWithEmail } from '../../firebase/auth';  // Firebase email auth fonksiyonları
-import { signInWithGoogle } from '../../firebase/googleAuth';  // Google auth fonksiyonları
+import auth from '@react-native-firebase/auth';
+import { signInWithGoogle } from '../../firebase/googleAuth';
 
-type SingInScreenProps = StackScreenProps<RootStackParamList, 'SingIn'>;
+type SignInScreenProps = StackScreenProps<RootStackParamList, 'SingIn'>;
 
-const SingIn = ({ navigation }: SingInScreenProps) => {
+const SignIn = ({ navigation }: SignInScreenProps) => {
     const theme = useTheme();
     const { colors }: { colors: any } = theme;
 
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [isFocused, setisFocused] = useState(false);
-    const [isFocused2, setisFocused2] = useState(false);
+    const [isFocused, setIsFocused] = useState(false);
+    const [isFocused2, setIsFocused2] = useState(false);
+    const [loading, setLoading] = useState(false);
 
     const handleEmailSignIn = async () => {
-        const response = await signInWithEmail(email, password);
-
-        if ('error' in response) {
-            Alert.alert("Giriş Başarısız", response.error);
-        } else {
-            console.log("✅ Email ile giriş yapıldı:", response.user);
-            // Kullanıcı giriş yaptıktan sonra Home ekranına yönlendir
-            navigation.navigate('DrawerNavigation', { screen: 'Home' });
+        if (!email || !password) {
+            Alert.alert("Hata", "Lütfen e-posta ve şifrenizi girin.");
+            return;
         }
+
+        setLoading(true);
+        try {
+            const userCredential = await auth().signInWithEmailAndPassword(email, password);
+            console.log("✅ Email ile giriş yapıldı:", userCredential.user);
+            navigation.replace('DrawerNavigation', { screen: 'Home' }); // Home ekranına yönlendir
+        } catch (error: any) {
+            Alert.alert("Giriş Hatası", error.message);
+        }
+        setLoading(false);
     };
 
     const handleGoogleLogin = async () => {
@@ -41,8 +47,7 @@ const SingIn = ({ navigation }: SingInScreenProps) => {
             Alert.alert("Giriş Başarısız", response.error);
         } else {
             console.log("✅ Google ile giriş yapıldı:", response.user);
-            // Google ile giriş yaptıktan sonra Home ekranına yönlendir
-            navigation.navigate('DrawerNavigation', { screen: 'Home' });
+            navigation.replace('DrawerNavigation', { screen: 'Home' });
         }
     };
 
@@ -57,67 +62,80 @@ const SingIn = ({ navigation }: SingInScreenProps) => {
             <ScrollView style={{ flexGrow: 1 }} showsVerticalScrollIndicator={false}>
                 <View style={[GlobalStyleSheet.container, { flexGrow: 1, paddingBottom: 0, paddingHorizontal: 30, paddingTop: 0 }]}>
                     <View style={{ marginBottom: 30 }}>
-                        <Text style={[styles.title1, { color: colors.title }]}>Sign In</Text>
+                        <Text style={[styles.title1, { color: colors.title }]}>Giriş Yap</Text>
                         <Text style={[styles.title2, { color: colors.title }]}>
                             Lütfen bilgilerinizi giriniz.
                         </Text>
                     </View>
 
-                    {/* Username Input */}
+                    {/* Email Input */}
                     <View style={[GlobalStyleSheet.container, { padding: 0 }]}>
-                        <Text style={[styles.title3, { color: '#8A8A8A' }]}>Username</Text>
+                        <Text style={[styles.title3, { color: '#8A8A8A' }]}>Email</Text>
                     </View>
                     <View style={{ marginBottom: 20, marginTop: 10 }}>
                         <Input
-                            onFocus={() => setisFocused(true)}
-                            onBlur={() => setisFocused(false)}
+                            onFocus={() => setIsFocused(true)}
+                            onBlur={() => setIsFocused(false)}
                             onChangeText={setEmail}
                             isFocused={isFocused}
                             inputBorder
                             defaultValue={email}
-                            placeholder="Emaili adresinizi giriniz"
+                            placeholder="E-posta adresinizi girin"
                         />
                     </View>
 
                     {/* Password Input */}
                     <View style={[GlobalStyleSheet.container, { padding: 0 }]}>
-                        <Text style={[styles.title3, { color: '#8A8A8A' }]}>Password</Text>
+                        <Text style={[styles.title3, { color: '#8A8A8A' }]}>Şifre</Text>
                     </View>
                     <View style={{ marginBottom: 10, marginTop: 10 }}>
                         <Input
-                            onFocus={() => setisFocused2(true)}
-                            onBlur={() => setisFocused2(false)}
+                            onFocus={() => setIsFocused2(true)}
+                            onBlur={() => setIsFocused2(false)}
                             style={{ backgroundColor: colors.card }}
                             onChangeText={setPassword}
                             isFocused={isFocused2}
                             type="password"
                             inputBorder
                             defaultValue={password}
-                            placeholder="Şifrenizi giriniz"
+                            placeholder="Şifrenizi girin"
                         />
                     </View>
 
-                    {/* Email Sign-In Button */}
+                    {/* Giriş Yap Butonu */}
                     <View style={{ marginBottom: 10 }}>
                         <Button
-                            title="Giriş yap."
+                            title={loading ? "Giriş Yapılıyor..." : "Giriş Yap"}
                             onPress={handleEmailSignIn}
-                            style={{ borderRadius: 100, backgroundColor: COLORS.primary, paddingHorizontal: 20, paddingVertical: 10, justifyContent: 'center', alignItems: 'center' }}
+                            style={{
+                                borderRadius: 100,
+                                backgroundColor: COLORS.primary,
+                                paddingHorizontal: 20,
+                                paddingVertical: 10,
+                                justifyContent: 'center',
+                                alignItems: 'center'
+                            }}
+                            disabled={loading}
                         />
                     </View>
 
-                    {/* Google Sign-In Button */}
+                    {/* Google ile Giriş Yap */}
                     <View style={{ marginBottom: 10 }}>
                         <Button
-                            title="Google ile devam et."
+                            title="Google ile Giriş Yap"
                             onPress={handleGoogleLogin}
-                            style={{ borderRadius: 100, backgroundColor: COLORS.primary, paddingHorizontal: 20, paddingVertical: 10, justifyContent: 'center', alignItems: 'center' }}
+                            style={{
+                                borderRadius: 100,
+                                backgroundColor: COLORS.primary,
+                                paddingHorizontal: 20,
+                                paddingVertical: 10,
+                                justifyContent: 'center',
+                                alignItems: 'center'
+                            }}
                         />
                     </View>
 
-
-
-                    {/* Forgot Password */}
+                    {/* Şifremi Unuttum */}
                     <View style={[GlobalStyleSheet.flex, { marginBottom: 20, marginTop: 10, paddingHorizontal: 10, justifyContent: 'flex-start', gap: 5 }]}>
                         <Text style={[styles.text, { color: colors.title }]}>Şifreni mi unuttun?</Text>
                         <TouchableOpacity
@@ -128,16 +146,23 @@ const SingIn = ({ navigation }: SingInScreenProps) => {
                         </TouchableOpacity>
                     </View>
 
-                    {/* Create Account Button */}
+                    {/* Hesap Oluştur */}
                     <View style={{ marginBottom: 15 }}>
-                        <Text style={[styles.title2, { color: colors.title, textAlign: 'center', opacity: 0.5 }]}>Hesabınız yok mu?</Text>
+                        <Text style={[styles.title2, { color: colors.title, textAlign: 'center', opacity: 0.5 }]}>Hesabın yok mu?</Text>
                     </View>
                     <Button
-                        title="Hesap oluşturun."
+                        title="Hesap Oluştur"
                         onPress={() => navigation.navigate('SignUp')}
                         text={COLORS.title}
                         color={COLORS.secondary}
-                        style={{ borderRadius: 100, backgroundColor: COLORS.secondary, paddingHorizontal: 20, paddingVertical: 10, justifyContent: 'center', alignItems: 'center' }}
+                        style={{
+                            borderRadius: 100,
+                            backgroundColor: COLORS.secondary,
+                            paddingHorizontal: 20,
+                            paddingVertical: 10,
+                            justifyContent: 'center',
+                            alignItems: 'center'
+                        }}
                     />
                 </View>
             </ScrollView>
@@ -169,4 +194,4 @@ const styles = StyleSheet.create({
     }
 });
 
-export default SingIn;
+export default SignIn;
