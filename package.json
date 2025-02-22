@@ -1,0 +1,7 @@
+{
+  "dependencies": {
+    "appcenter": "5.0.2",
+    "appcenter-analytics": "5.0.2",
+    "appcenter-crashes": "5.0.2"
+  }
+}

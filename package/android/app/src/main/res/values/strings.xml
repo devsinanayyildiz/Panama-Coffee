@@ -1,4 +1,6 @@
 <resources>
     <string name="app_name">Panama Coffee</string>
     <string name="default_web_client_id">409055452730-7njbetm27pccr821n8h5l5al1fbeuta0.apps.googleusercontent.com</string>
+    <string name="appCenterCrashes_whenToSendCrashes" moduleConfig="true" translatable="false">DO_NOT_ASK_JAVASCRIPT</string>
+    <string name="appCenterAnalytics_whenToEnableAnalytics" moduleConfig="true" translatable="false">ALWAYS_SEND</string>
 </resources>
